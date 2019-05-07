@@ -3,7 +3,6 @@
 <html lang="en">
 
 <head>
-
   <meta charset="utf-8">
 
   <style>
@@ -21,13 +20,21 @@
 </head>
 
 <body style="font-size:20px; padding:50px;">
+  <% include ./partials/_header %>
+  <p></p>
+  <h2> MyURLs </h2>
     <!-- Add EJS code here -->
-    <table>
+    <p></p>
+    <head>
+    <table class = "table">
+      <thread>
     <% Object.keys(urls).forEach(function(key) { %>
       <tr>
-      <th> <%= urls[key] %> </th>
+      <th scope="col"> <%= key %> </th>
+      <th scope="col"> <%= urls[key] %> </th>
     </tr>
   <% }) %>
+</thread>
 </table>
 </body>
 

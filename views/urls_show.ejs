@@ -3,7 +3,6 @@
 <html lang="en">
 
 <head>
-
   <meta charset="utf-8">
 
   <style>
@@ -21,8 +20,12 @@
 </head>
 
 <body style="font-size:20px; padding:50px;">
+  <header>
+      <% include ./partials/_header %>
+  </header>
     <!-- Add EJS code here -->
-    <p> <%= shortURL %> : <a href = <%= longURL %>><%= longURL %></a> <p>
+    <h3> <b>Tiny URL for <%= longURL %> </b></h3>
+    <p> <%=shortURL %> </p>
 </table>
 </body>
 
