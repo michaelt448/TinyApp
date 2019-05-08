@@ -70,6 +70,13 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
+// POST - deletes a url from the browse page
+app.post("/urls/:id/delete", (req,res) => {
+  console.log(req.params);
+  delete urlDatabase[req.params.id];
+  res.redirect("/urls/");
+})
+
 // Runs servers on PORT
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
