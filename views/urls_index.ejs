@@ -30,9 +30,10 @@
       <thread>
     <% Object.keys(urls).forEach(function(key) { %>
       <tr>
-      <th scope="col"> <%= key %> </th>
+      <th> <%= key %> </th>
       <th scope="col"> <a href = "<%= urls[key] %>"> <%= urls[key] %> </a> </th>
-      <th scope="col">
+      <th scope="col"> <a href = "/urls/<%= key %>"> edit </a> </th>
+      <th scope="col>">
         <form method="POST" action="/urls/<%= key %>/delete">
           <button type="submit" value = 'delete'>delete</button>
       </form>

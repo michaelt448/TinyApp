@@ -26,7 +26,11 @@
     <!-- Add EJS code here -->
     <h3> <b>Tiny URL for <%= longURL %> </b></h3>
     <p> <%=shortURL %> </p>
-</table>
+    <form method="POST" action="/urls/<%= shortURL %>/update">
+         <p> <input name = "longURL" text ="text" value = <% longURL %>></p>
+          <button type="submit" class="btn btn-primary">Edit</button>
+      </form>
+      <a href = "/urls">Go back to your index</a>
 </body>
 
 </html>

@@ -76,6 +76,13 @@ app.post("/urls/:id/delete", (req,res) => {
   res.redirect("/urls/");
 })
 
+//POST - updates the longURL to be diffrent URL
+app.post("/urls/:id/update", (req, res) => {;
+  let shortURL = req.params.id;
+  urlDatabase[shortURL] = req.body.longURL;
+  res.redirect(`/urls/${shortURL}`);
+});
+
 // Runs servers on PORT
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
