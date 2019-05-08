@@ -72,7 +72,6 @@ app.post("/urls", (req, res) => {
 
 // POST - deletes a url from the browse page
 app.post("/urls/:id/delete", (req,res) => {
-  console.log(req.params);
   delete urlDatabase[req.params.id];
   res.redirect("/urls/");
 })
