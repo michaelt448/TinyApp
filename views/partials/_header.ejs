@@ -8,6 +8,17 @@
 
 <body>
   <h1> TinyApp </h1>
-  <a href = "/urls/new">Create New TinyURL</a>
+   <% if(username !== undefined) {%>
+   <p> Logged In as <%= username %> ! </p>
+   <form method = "POST" action = "/logout">
+    <button type="submit">Logout</button>
+  </form>
+    <%} else {%>
+  <form method = "POST" action = "/login">
+    <p> <input name = "username" text ="text"></p>
+    <button type="submit">Submit</button>
+  </form>
+  <%}%>
+  <p><a href = "/urls/new">Create New TinyURL</a></p>
 </body>
 </html>
