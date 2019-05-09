@@ -1,14 +1,33 @@
 const express = require('express');
-const app = express();
-const PORT = 8080; // default port 8080
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser')
+
+const PORT = 8080; // default port 8080
+
+const app = express();
+app.use(bodyParser.urlencoded({extended: true}));
+app.use(cookieParser());
+app.set('view engine', 'ejs');
 
 //local dataBase
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
+
+//local users
+const users = {
+  "A": {
+    id: "A",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur"
+  },
+ "B": {
+    id: "B",
+    email: "user2@example.com",
+    password: "dishwasher-funk"
+  }
+}
 
 // Generates Random string from of length 6 from combination of 6 lower case letters
 const generateRandomString = function() {
@@ -23,15 +42,12 @@ const generateRandomString = function() {
 }
 
 //setUp
-app.use(bodyParser.urlencoded({extended: true}));
-app.use(cookieParser());
-app.set('view engine', 'ejs');
 //End setUp
 
 
 //Rootpage - prints hello in browser
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  res.redirct ('/urls');
 });
 
 //hello extension - prints Hello world in browser
@@ -40,10 +56,11 @@ app.get('/hello', (req,res)=> {
 });
 
 //GET - urls extension - brings to a table of urls with tinyURL on left and Full URL to right
-app.get('/urls',(req,res) => {
-  let templateVars = { urls: urlDatabase,
-                      username : req.cookies['username']
-                    };
+app.get('/urls', (req,res) => {
+  let templateVars = {
+    urls: urlDatabase,
+    username : req.cookies['username']
+    };
   res.render('urls_index', templateVars);
 })
 
@@ -51,6 +68,11 @@ app.get('/urls',(req,res) => {
 app.get('/urls/new', (req, res) => {
   let templateVars = {username : req.cookies['username']}
   res.render('urls_new', templateVars);
+})
+
+// GET - page to register for username with password
+app.get('/register', (req,res) => {
+  res.render('urls_registration');
 })
 
 // GET - sends user to URL using the current shortURL
@@ -84,23 +106,37 @@ app.post("/urls/:id/delete", (req,res) => {
 })
 
 //POST - updates the longURL to be diffrent URL
-app.post("/urls/:id/update", (req, res) => {;
+app.post("/urls/:id/update", (req, res) => {
   let shortURL = req.params.id;
   urlDatabase[shortURL] = req.body.longURL;
   res.redirect(`/urls/${shortURL}`);
 });
 
+//POST - logs in the username name
 app.post("/login", (req, res) => {
   let username = req.body.username;
   res.cookie('username', username);
   res.redirect('/urls/');
 });
-
+//POST - deletes username from cookie, logs out
 app.post("/logout", (req, res) => {
-  console.log(req.cookies['username']);
   res.clearCookie('username');
   res.redirect('/urls/')
 });
+
+//POST - adds a new user to the global user object and adds a cookie
+app.post("/register",(req,res) => {
+  const id = generateRandomString();
+  users[id] = {
+    id : id,
+    email : req.body.email,
+    password : req.body.password
+  };
+  res.cookie('user_id', id);
+  console.log(id);
+  console.log(users);
+  res.redirect('/urls/');
+})
 
 // Runs servers on PORT
 app.listen(PORT, () => {
