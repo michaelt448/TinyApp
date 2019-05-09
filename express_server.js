@@ -11,8 +11,8 @@ app.set('view engine', 'ejs');
 
 //local dataBase
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  // "b2xVn2": "http://www.lighthouselabs.ca",
+  // "9sm5xK": "http://www.google.com"
 };
 
 //local users
@@ -169,10 +169,8 @@ const checkEmpties = (email, password) => {
   console.log(password);
   let error = [false];
   if(email === '') {
-    console.log('inside checking empty email');
     error = [true,'please put in a username'];
   } else if(password === '') {
-    console.log('inside checking empty password')
     error = [true, 'please put in a password'];
   }
   return error;
@@ -198,12 +196,18 @@ const checkRegistrationErrors = (email,password) => {
 const checkEmail = (email,password) => {
   let error = checkEmpties(email,password);
   if(error[0]) {
-    console.log('HELLO BUGGY');
     return ['', error];
   }
   for(user in users) {
     if(users[user].email === email) {
-      return [users[user].id,error];
+      // console.log('This is the passed in password', password);
+      // console.log('This is the password in db', user[user].password);
+      if(users[user].password === password){
+        return [users[user].id,error];
+      }
+      else{
+      return ['',[true,'Wrong password']]
+      }
     }
   }
   return ['',[true,'The username was not found']];
