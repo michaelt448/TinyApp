@@ -8,17 +8,15 @@
 
 <body>
   <h1> TinyApp </h1>
-   <% if(username !== undefined) {%>
-   <p> Logged In as <%= username %> ! </p>
+   <% if(user_id !== undefined) {%>
+   <p> Logged In as <%= user_id.email %> ! </p>
    <form method = "POST" action = "/logout">
+  <p><a href = "/urls/new">Create New TinyURL</a></p>
     <button type="submit">Logout</button>
   </form>
     <%} else {%>
-  <form method = "POST" action = "/login">
-    <p> <input name = "username" text ="text"></p>
-    <button type="submit">Submit</button>
-  </form>
+  <p><a href='/login'> Login </a></p>
+  <p><a href='/register'> Register </a></p>
   <%}%>
-  <p><a href = "/urls/new">Create New TinyURL</a></p>
 </body>
 </html>

@@ -22,19 +22,23 @@
 <body style="font-size:20px; padding:50px;">
   <h1><b> TinyApp </b></h1>
     <!-- Add EJS code here -->
+    <h2> REGISTRATION </h2>
     <form method="POST" action="/register">
          <p>
           Email :
-          <input name = "email" text ="text" type = email>
+          <input name = "email" type = "email"l>
         </p>
         <p>
           Password:
-          <input name = "password" text = "text" type = password>
+          <input name = "password" type = "password">
         </p>
         <button type="submit">
         Submit
         </button>
     </form>
+    <% if(error[0]) { %>
+      <p><%= error[1] %> </p>
+    <% } %>
 </body>
 
 </html>

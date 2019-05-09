@@ -47,7 +47,7 @@ const generateRandomString = function() {
 
 //Rootpage - prints hello in browser
 app.get("/", (req, res) => {
-  res.redirct ('/urls');
+  res.redirect ('/urls');
 });
 
 //hello extension - prints Hello world in browser
@@ -59,21 +59,32 @@ app.get('/hello', (req,res)=> {
 app.get('/urls', (req,res) => {
   let templateVars = {
     urls: urlDatabase,
-    username : req.cookies['username']
+    user_id : users[req.cookies['user_id']]
     };
   res.render('urls_index', templateVars);
-})
+});
 
 // GET - page to make a new tinyURL for any URL
 app.get('/urls/new', (req, res) => {
-  let templateVars = {username : req.cookies['username']}
+  let templateVars = {user_id : req.cookies['user_id']}
   res.render('urls_new', templateVars);
-})
+});
 
-// GET - page to register for username with password
+//GET - renders a login page
+app.get('/login', (req,res) => {
+  let templateVars = {
+    error : [false]
+  };
+  res.render('urls_login', templateVars);
+});
+
+// GET - page to register for user_id with password
 app.get('/register', (req,res) => {
-  res.render('urls_registration');
-})
+  let templateVars = {
+    error : [true]
+  }
+  res.render('urls_registration',templateVars);
+});
 
 // GET - sends user to URL using the current shortURL
 app.get("/u/:shortURL", (req, res) => {
@@ -88,7 +99,7 @@ app.get("/u/:shortURL", (req, res) => {
 app.get('/urls/:shortURL', (req,res) => {
   let templateVars = { shortURL: req.params.shortURL,
                       longURL : urlDatabase[req.params.shortURL],
-                      username : req.cookies['username']};
+                      user_id : req.cookies['user_id']};
   res.render('urls_show', templateVars);
 })
 
@@ -112,31 +123,91 @@ app.post("/urls/:id/update", (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
-//POST - logs in the username name
+//POST - logs in the user_id name
 app.post("/login", (req, res) => {
-  let username = req.body.username;
-  res.cookie('username', username);
-  res.redirect('/urls/');
+  let email = req.body.email;
+  [user_id,error] = checkEmail(req.body.email,req.body.password);
+  let templateVars = {error : error};
+  if(error[0]) {
+    res.status(400);
+    res.render('urls_login',templateVars);
+  }
+  else {
+    res.cookie('user_id', user_id);
+    res.redirect('/urls/');
+  }
 });
-//POST - deletes username from cookie, logs out
+//POST - deletes user_id from cookie, logs out
 app.post("/logout", (req, res) => {
-  res.clearCookie('username');
+  res.clearCookie('user_id');
   res.redirect('/urls/')
 });
 
 //POST - adds a new user to the global user object and adds a cookie
 app.post("/register",(req,res) => {
-  const id = generateRandomString();
-  users[id] = {
-    id : id,
-    email : req.body.email,
-    password : req.body.password
-  };
-  res.cookie('user_id', id);
-  console.log(id);
-  console.log(users);
-  res.redirect('/urls/');
+  let error = checkRegistrationErrors(req.body.email,req.body.password);
+  let templateVars = {error : error};
+  if(error[0]) {
+    res.status(400);
+    res.render('urls_registration',templateVars);
+  }
+  else {
+    const id = generateRandomString();
+    users[id] = {
+      id : id,
+      email : req.body.email,
+      password : req.body.password
+    };
+    res.cookie('user_id', id);
+    res.redirect('/urls/');
+  }
 })
+
+//Helper function which checks that the email and password are not empty
+// sends back a status
+const checkEmpties = (email, password) => {
+  console.log(password);
+  let error = [false];
+  if(email === '') {
+    console.log('inside checking empty email');
+    error = [true,'please put in a username'];
+  } else if(password === '') {
+    console.log('inside checking empty password')
+    error = [true, 'please put in a password'];
+  }
+  return error;
+}
+
+// Helper checks if there is any registration errors
+const checkRegistrationErrors = (email,password) => {
+  let error = checkEmpties(email,password);
+  if(error[0]) {
+    return error;
+  }
+  for(id in users) {
+    if(users[id].email === email) {
+      error = [true, 'You are alread registered!!'];
+      break;
+    }
+  }
+  return error;
+}
+
+//Helper function which checks whether email is in the database
+// If there are errors, the username sent back is empty string, emtpy string should not register for user name
+const checkEmail = (email,password) => {
+  let error = checkEmpties(email,password);
+  if(error[0]) {
+    console.log('HELLO BUGGY');
+    return ['', error];
+  }
+  for(user in users) {
+    if(users[user].email === email) {
+      return [users[user].id,error];
+    }
+  }
+  return ['',[true,'The username was not found']];
+}
 
 // Runs servers on PORT
 app.listen(PORT, () => {
