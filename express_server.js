@@ -105,7 +105,9 @@ app.get('/urls/new', (req, res) => {
     res.redirect('/login');
   }
   else {
-    let templateVars = {user_id : req.session.user_id}
+    let templateVars = {
+      user_id : users[req.session.user_id]
+    }
     res.render('urls_new', templateVars);
   }
 });
@@ -147,7 +149,7 @@ app.get('/urls/:shortURL', (req,res) => {
     // console.log('this is suppose to be long url',userDB[req.params.shortURL]);
     let templateVars = { shortURL: req.params.shortURL,
                        longURL : userDB[req.params.shortURL],
-                        user_id : req.session.user_id};
+                        user_id : users[req.session.user_id]};
     res.render('urls_show', templateVars);
   }
   else {
@@ -163,7 +165,7 @@ app.post("/urls", (req, res) => {
     longURL : req.body.longURL,
     userID : req.session.user_id
   }
-  console.log('this db should be updated', urlDatabase);
+  // console.log('this db should be updated', urlDatabase);
   res.redirect(`/urls/${shortURL}`);
 });
 
@@ -221,8 +223,8 @@ app.post("/register",(req,res) => {
   }
   else {
     const hashedPassword = bcrypt.hashSync(req.body.password, 10);
-    console.log('this is the regular password', req.body.password);
-    console.log('this is the hashed password', hashedPassword);
+    // console.log('this is the regular password', req.body.password);
+    // console.log('this is the hashed password', hashedPassword);
     const id = generateRandomString();
     users[id] = {
       id : id,
