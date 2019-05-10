@@ -25,7 +25,7 @@
   </header>
     <!-- Add EJS code here -->
     <h3> <b>Tiny URL for <%= longURL %> </b></h3>
-    <p> <%=shortURL %> </p>
+    <p> <a href = "/u/<%= shortURL %>"><%=shortURL %> </a></p>
     <form method="POST" action="/urls/<%= shortURL %>/update">
          <p> <input name = "longURL" value = <% longURL %>></p>
           <button type="submit">Edit</button>

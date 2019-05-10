@@ -15,21 +15,11 @@ app.use(cookieSession({
 app.set('view engine', 'ejs');
 
 
-//local dataBase
+//The database for all users, key corresponds to short URL with object value containing email, encrypted pass, and full URL
 const urlDatabase = {
-  // "b2xVn2": "http://www.lighthouselabs.ca",
-  // "9sm5xK": "http://www.google.com"
-  //    b6UTxQ: {
-  //   longURL: "https://www.tsn.ca",
-  //   userID: "aJ48lW"
-  //    },
-  // i3BoGr: {
-  //   longURL: "https://www.google.ca",
-  //   userID: "aJ48lW"
-  // }
 };
 
-//local users
+//local users data base, contains key for user is cookie, value is object with cookie, email, and password
 const users = {
   "A": {
     id: "A",
@@ -43,25 +33,19 @@ const users = {
   }
 }
 
-// Generates Random string from of length 6 from combination of 6 lower case letters
-const generateRandomString = function() {
-  let length = 6;
-  let word = '';
-  while(length > 0) {
-    let charCode = Math.floor(Math.random()*25 + 97);
-    word += String.fromCharCode(charCode);
-    length--;
-  }
-  return word;
-}
 
 //setUp
 //End setUp
 
 
-//Rootpage - prints hello in browser
+//Rootpage - redirects person to login if not in, otherwise redirect person to the index page.
 app.get("/", (req, res) => {
+  if(req.session.user_id === undefined) {
+    res.redirect('/login');
+  }
+  else {
   res.redirect ('/urls');
+  }
 });
 
 //hello extension - prints Hello world in browser
@@ -72,14 +56,14 @@ app.get('/hello', (req,res)=> {
 //GET - urls extension - brings to a table of urls with tinyURL on left and Full URL to right
 app.get('/urls', (req,res) => {
   //console.log(req.session.user_id);
-    const userDB = urlsForUser(req.session.user_id);
-    // console.log('this is my data base', userDB)
-    // console.log('this is the general db', urlDatabase );
-    console.log('HELELLOWJIOJDF');
-    let templateVars = {
-      urls: userDB,
-      user_id : users[req.session.user_id]
-      };
+  const userDB = urlsForUser(req.session.user_id);
+  // console.log('this is my data base', userDB)
+  // console.log('this is the general db', urlDatabase );
+  // console.log('HELELLOWJIOJDF');
+  let templateVars = {
+    urls: userDB,
+    user_id : users[req.session.user_id]
+    };
     res.render('urls_index', templateVars);
 });
 
@@ -114,18 +98,23 @@ app.get('/urls/new', (req, res) => {
 
 //GET - renders a login page
 app.get('/login', (req,res) => {
+  if(req.session.user_id === undefined){
   let templateVars = {
     error : [false]
   };
   res.render('urls_login', templateVars);
+}
+res.redirect('/urls/')
 });
 
 // GET - page to register for user_id with password
 app.get('/register', (req,res) => {
+  if(req.session.user_id === undefined){
   let templateVars = {
     error : [true]
   }
   res.render('urls_registration',templateVars);
+  }
 });
 
 // GET - sends user to URL using the current shortURL
@@ -189,7 +178,7 @@ app.post("/urls/:id/update", (req, res) => {
   if(urlDatabase[req.params.id].userID === req.session.user_id){
     let shortURL = req.params.id;
     urlDatabase[shortURL].longURL = req.body.longURL;
-    res.redirect(`/urls/${shortURL}`);
+    res.redirect(`/urls/`);
   }
 });
 
@@ -197,7 +186,9 @@ app.post("/urls/:id/update", (req, res) => {
 app.post("/login", (req, res) => {
   let email = req.body.email;
   [user_id,error] = checkEmail(req.body.email,req.body.password);
-  let templateVars = {error : error};
+  let templateVars = {
+    error : error
+  };
   if(error[0]) {
     res.status(400);
     res.render('urls_login',templateVars);
@@ -234,10 +225,31 @@ app.post("/register",(req,res) => {
     req.session.user_id = id;
     res.redirect('/urls/');
   }
-})
+});
+
+
+//                           HELPER FUNCTIONS BEGIN HERE
+//Helper function Generates Random string from of length 6 from combination of 6 lower case letters
+// @ret a randomly generated string
+const generateRandomString = function() {
+  let length = 6;
+  let word = '';
+  while(length > 0) {
+    let charCode = Math.floor(Math.random()*25 + 97);
+    word += String.fromCharCode(charCode);
+    length--;
+  }
+  return word;
+}
+
+
 
 //Helper function which checks that the email and password are not empty
-// sends back a status
+// @param email : 'string' which is email of person
+// @param password : 'string' which is the password inputed by user
+// @retr error: array of size 2, first entry containing boolean, true if there is error, false else,
+//second entry containing error message
+
 const checkEmpties = (email, password) => {
   //console.log(password);
   let error = [false];
@@ -247,9 +259,14 @@ const checkEmpties = (email, password) => {
     error = [true, 'please put in a password'];
   }
   return error;
-}
+};
 
 // Helper checks if there is any registration errors
+// @param email : 'string' which is email of person
+// @param password : 'string' which is the password inputed by user
+// @retr error: array of size 2, first entry containing boolean, true if there is error, false else,
+//second entry containing error message
+
 const checkRegistrationErrors = (email,password) => {
   let error = checkEmpties(email,password);
   if(error[0]) {
@@ -262,10 +279,14 @@ const checkRegistrationErrors = (email,password) => {
     }
   }
   return error;
-}
+};
 
-//Helper function which checks whether email is in the database
-// If there are errors, the username sent back is empty string, emtpy string should not register for user name
+//Helper function which checks whether email and password is in the database and match for LOGIN
+// If there are errors, the username sent back is empty string
+// @param email : 'string' which is email of person
+// @param password : 'string' which is the password inputed by user
+// @retr error: array of size 2, first entry containing boolean, true if there is error, false else,
+//second entry containing error message
 const checkEmail = (email,password) => {
   let error = checkEmpties(email,password);
   if(error[0]) {
@@ -273,8 +294,6 @@ const checkEmail = (email,password) => {
   }
   for(user in users) {
     if(users[user].email === email) {
-      // console.log('This is the passed in password', password);
-      // console.log('This is the password in db', users[user].password);
       if(bcrypt.compareSync(password, users[user].password)){
         return [users[user].id,error];
       }
@@ -284,7 +303,7 @@ const checkEmail = (email,password) => {
     }
   }
   return ['',[true,'The username was not found']];
-}
+};
 
 // Runs servers on PORT
 app.listen(PORT, () => {
