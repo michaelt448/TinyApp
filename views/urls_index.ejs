@@ -24,28 +24,31 @@
   <p></p>
     <!-- Add EJS code here -->
     <head>
+    <%if(user_id !== undefined) {%>
+    <h2> MyURLs </h2>
     <table class = "table">
-      <thread>
-        <%if(user_id !== undefined) {%>
-  <h2> MyURLs </h2>
-    <p></p>
-    <% Object.keys(urls).forEach(function(key) { %>
-      <tr>
-      <th> <%= key %> </th>
-      <th scope="col"> <a href = "<%= urls[key] %>"> <%= urls[key] %> </a> </th>
-      <th scope="col"> <a href = "/urls/<%= key %>"> edit </a> </th>
-      <th scope="col>">
+      <thead>
+        <th scope="col">ShortURL</th>
+        <th scope="col">URL</th>
+        <th scope="col">Edit</th>
+        <th scope="col">Delete</th>
+      </tread>
+      <% Object.keys(urls).forEach(function(key) { %>
+        <tr>
+        <th> <%= key %> </th>
+        <th scope="col"> <a href = "<%= urls[key] %>"> <%= urls[key] %> </a> </th>
+        <th scope="col"> <a href = "/urls/<%= key %>"> edit </a> </th>
+        <th scope="col>">
         <form method="POST" action="/urls/<%= key %>/delete">
           <button type="submit" value = 'delete'>delete</button>
       </form>
-  </th>
-    </tr>
+        </th>
   <% }) %>
       <%} else {%>
-      <p> Please log in to view your URLS </p>
+      <p> Please log in to view your URLs </p>
   <%}%>
-</thread>
-</table>
 </body>
+        </tr>
+</table>
 
 </html>

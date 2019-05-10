@@ -26,27 +26,23 @@ const users = {
 
 
 
-//Rootpage - redirects person to login if not logged in, otherwise redirect person to the index page.
-app.get("/", (req, res) => {
+//GET - ROOTPAGE - redirects person to login if not logged in, otherwise redirect person to the index page.
+app.get('/', (req, res) => {
   if(req.session.user_id === undefined) {
     res.redirect('/login');
-  }
-  else {
-  res.redirect ('/urls');
+  }else {
+  res.redirect('/urls');
   }
 });
 
-//hello extension - prints Hello world in browser
+//GET - /hello - hello extension - prints Hello world in browser
 app.get('/hello', (req,res)=> {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
-//GET - RENDERS /urls, passing in individual userDB and user_id from cookie
+//GET - /urls - RENDERS urls_index onto /urls, passing in individual userDB and user_id from cookie
 app.get('/urls', (req,res) => {
   const userDB = urlsForUser(req.session.user_id);
-  // console.log('this is my data base', userDB)
-  // console.log('this is the general db', urlDatabase );
-  // console.log('HELELLOWJIOJDF');
   let templateVars = {
     urls: userDB,
     user_id : users[req.session.user_id]
@@ -56,12 +52,11 @@ app.get('/urls', (req,res) => {
 
 
 
-// GET - page to make a new tinyURL for any URL
+// GET - /urls/new - renders urls to make new URL, if not logged in redirects to loggin otherwise renders urls_new
 app.get('/urls/new', (req, res) => {
   if(req.session.user_id === undefined) {
-    res.redirect('/login');
-  }
-  else {
+    res.status(400).redirect('/login');
+  }else {
     let templateVars = {
       user_id : users[req.session.user_id]
     }
@@ -69,110 +64,111 @@ app.get('/urls/new', (req, res) => {
   }
 });
 
-//GET - renders a login page
+//GET - /login - if logged in than redirects to index, otherwise will render a login page
 app.get('/login', (req,res) => {
   if(req.session.user_id === undefined){
-  let templateVars = {
-    error : [false]
-  };
-  res.render('urls_login', templateVars);
-}
-res.redirect('/urls/')
+    let templateVars = {
+      error : [false]
+    };
+    res.render('urls_login', templateVars);
+  }else {
+    res.status(400).redirect('/urls');
+  }
 });
 
-// GET - page to register for user_id with password
+// GET - /register - if logged in than redirects to index, otherwise will render a register page
 app.get('/register', (req,res) => {
   if(req.session.user_id === undefined){
-  let templateVars = {
-    error : [true]
-  }
+    let templateVars = {
+      error : [true]
+    }
   res.render('urls_registration',templateVars);
+  }else {
+    res.status(400).redirect('/urls');
   }
 });
+
+
+
 //                                 GET MESSAGE TAKE A PAREMETER, ANY GET MESSAGE PUT BEFORE
-// GET - sends user to URL using the current shortURL
-app.get("/u/:shortURL", (req, res) => {
-  const userDB = urlsForUser(req.session.user_id);
-  const longURL = userDB[req.params.shortURL];
+// GET - /u/: - sends user to longURL using the current shortURL, gives error back if there is no such URL
+// @parm - shortURL, the URL which should redirect to the long URL
+app.get('/u/:shortURL', (req, res) => {
+  //const userDB = urlsForUser(req.session.user_id);
+  const longURL = urlDatabase[req.params.shortURL].longURL;
   if(longURL === undefined) {
-    res.send("no such shortURL was found");
+    res.status(404).send('no such shortURL was found');
   }
   res.redirect(longURL);
 });
 
-// GET - brings to a page which shows the shortURL for the specific URL
+// GET - /urls/: - bring to a page which short the shortURL for the longURL
+// @param shortURL : the shortURL matching to the longURL
 app.get('/urls/:shortURL', (req,res) => {
-    // console.log('this is the paremeters', urlDatabase[req.params.shortURL].userID);
-    // console.log('this is my my cookie', req.cookies['user_id']);
-    if(urlDatabase[req.params.shortURL].userID === req.session.user_id) {
+  if(urlDatabase[req.params.shortURL].userID === req.session.user_id) {
     const userDB = urlsForUser(req.session.user_id);
-    // console.log('this is an updated db', urlDatabase);
-    // console.log('this is an updated userDB', userDB);
-    // console.log('this is suppose to be long url',userDB[req.params.shortURL]);
-    let templateVars = { shortURL: req.params.shortURL,
-                       longURL : userDB[req.params.shortURL],
-                        user_id : users[req.session.user_id]};
+    let templateVars = {
+      shortURL: req.params.shortURL,
+      longURL : userDB[req.params.shortURL],
+      user_id : users[req.session.user_id]
+    };
     res.render('urls_show', templateVars);
+  }else {
+    res.status(402).send('You do not have access to the page');
   }
-  else {
-    res.send("You do not have access to the page");
-  }
-})
+});
+
+
 //                            POST BEGINS HERE
 
-// POST - uses a generated String as shortURL and stores the shortURL to a URL
-app.post("/urls", (req, res) => {
+// POST - /urls/ - uses a generated a Random String to be shortURL for a long URL
+app.post('/urls', (req, res) => {
   const shortURL = generateRandomString();
-  // console.log('this is my short URL', shortURL);
   urlDatabase[shortURL] = {
     longURL : req.body.longURL,
     userID : req.session.user_id
   }
-  // console.log('this db should be updated', urlDatabase);
   res.redirect(`/urls/${shortURL}`);
 });
 
-// POST - deletes a url from the browse page
-app.post("/urls/:id/delete", (req,res) => {
-  // console.log('this is the db', urlDatabase);
-  // console.log('this is the cookie', req.cookies['user_id']);
-  // console.log('this is the paremeters', req.params);
-  // console.log('this is the shortURL', urlDatabase[req.params.id]);
+// POST - /urls/:/delete - deletes a url from the data base and from the browser page if has access
+// otherwise sends error
+app.post('/urls/:id/delete', (req,res) => {
   if(urlDatabase[req.params.id].userID === req.session.user_id){
   delete urlDatabase[req.params.id];
   res.redirect("/urls/");
-  } else {
-    res.send('you do not have premission to delete this');
+  }else {
+    res.status(403).send('you do not have premission to delete this');
   }
 
 })
 
-//POST - updates the longURL to be diffrent URL
-app.post("/urls/:id/update", (req, res) => {
+// POST - /urls/:/update - updates the value the longURL stored under specific key shortURL to
+// diffrent longURL returns error if it does not have premission
+app.post('/urls/:id/update', (req, res) => {
   if(urlDatabase[req.params.id].userID === req.session.user_id){
     let shortURL = req.params.id;
     urlDatabase[shortURL].longURL = req.body.longURL;
     res.redirect(`/urls/`);
+  }else {
+    res.status(403).send('you do not have premission to update this');
   }
 });
 
-//POST - logs in the user_id name
+//POST - /login - if email and password are valid redirects to /urls otherwise passes back an error
 app.post("/login", (req, res) => {
-  let email = req.body.email;
-  [user_id,error] = checkEmail(req.body.email,req.body.password);
+  let [user_id,error] = checkEmail(req.body.email,req.body.password);
   let templateVars = {
     error : error
   };
   if(error[0]) {
-    res.status(400);
-    res.render('urls_login',templateVars);
-  }
-  else {
+    res.status(403).render('urls_login',templateVars);
+  }else {
     req.session.user_id = user_id;
     res.redirect('/urls/');
   }
 });
-//POST - deletes user_id from cookie, logs out
+//POST - /logout - deletes user_id from cookie, logs out
 app.post("/logout", (req, res) => {
   req.session = null;
   res.redirect('/urls/')
@@ -183,10 +179,8 @@ app.post("/register",(req,res) => {
   let error = checkRegistrationErrors(req.body.email,req.body.password);
   let templateVars = {error : error};
   if(error[0]) {
-    res.status(400);
-    res.render('urls_registration',templateVars);
-  }
-  else {
+    res.status(400).render('urls_registration',templateVars);
+  }else {
     const hashedPassword = bcrypt.hashSync(req.body.password, 10);
     const id = generateRandomString();
     users[id] = {
