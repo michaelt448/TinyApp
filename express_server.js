@@ -13,6 +13,14 @@ app.set('view engine', 'ejs');
 const urlDatabase = {
   // "b2xVn2": "http://www.lighthouselabs.ca",
   // "9sm5xK": "http://www.google.com"
+  //    b6UTxQ: {
+  //   longURL: "https://www.tsn.ca",
+  //   userID: "aJ48lW"
+  //    },
+  // i3BoGr: {
+  //   longURL: "https://www.google.ca",
+  //   userID: "aJ48lW"
+  // }
 };
 
 //local users
@@ -57,17 +65,43 @@ app.get('/hello', (req,res)=> {
 
 //GET - urls extension - brings to a table of urls with tinyURL on left and Full URL to right
 app.get('/urls', (req,res) => {
-  let templateVars = {
-    urls: urlDatabase,
-    user_id : users[req.cookies['user_id']]
-    };
-  res.render('urls_index', templateVars);
+  if(req.cookies !== undefined){
+    const userDB = urlsForUser(req.cookies['user_id']);
+    // console.log('this is my data base', userDB)
+    // console.log('this is the general db', urlDatabase );
+    let templateVars = {
+      urls: userDB,
+      user_id : users[req.cookies['user_id']]
+      };
+    res.render('urls_index', templateVars);
+  }
 });
+
+//Helper function which checks through the dataBase of the logged in user and brings back their URLs
+const urlsForUser = (userID) => {
+  //console.log('I am here', userID);
+  const userDB = {};
+  for(smallURL in urlDatabase) {
+    // console.log('current small URL', smallURL);
+    // console.log('this is the the id which should be matched', userID);
+    // console.log('this is the db', urlDatabase);
+    if(urlDatabase[smallURL].userID === userID) {
+      userDB[smallURL] = urlDatabase[smallURL].longURL;
+    }
+  }
+  //console.log(userDB);
+  return userDB;
+}
 
 // GET - page to make a new tinyURL for any URL
 app.get('/urls/new', (req, res) => {
-  let templateVars = {user_id : req.cookies['user_id']}
-  res.render('urls_new', templateVars);
+  if(req.cookies['user_id'] === undefined) {
+    res.redirect('/login');
+  }
+  else {
+    let templateVars = {user_id : req.cookies['user_id']}
+    res.render('urls_new', templateVars);
+  }
 });
 
 //GET - renders a login page
@@ -88,7 +122,8 @@ app.get('/register', (req,res) => {
 
 // GET - sends user to URL using the current shortURL
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
+  const userDB = urlsForUser(req.cookies['user_id']);
+  const longURL = userDB[req.params.shortURL];
   if(longURL === undefined) {
     res.send("no such shortURL was found");
   }
@@ -97,30 +132,57 @@ app.get("/u/:shortURL", (req, res) => {
 
 // GET - brings to a page which shows the shortURL for the specific URL
 app.get('/urls/:shortURL', (req,res) => {
-  let templateVars = { shortURL: req.params.shortURL,
-                      longURL : urlDatabase[req.params.shortURL],
-                      user_id : req.cookies['user_id']};
-  res.render('urls_show', templateVars);
+    // console.log('this is the paremeters', urlDatabase[req.params.shortURL].userID);
+    // console.log('this is my my cookie', req.cookies['user_id']);
+    if(urlDatabase[req.params.shortURL].userID === req.cookies['user_id']) {
+    const userDB = urlsForUser(req.cookies['user_id']);
+    // console.log('this is an updated db', urlDatabase);
+    // console.log('this is an updated userDB', userDB);
+    // console.log('this is suppose to be long url',userDB[req.params.shortURL]);
+    let templateVars = { shortURL: req.params.shortURL,
+                       longURL : userDB[req.params.shortURL],
+                        user_id : req.cookies['user_id']};
+    res.render('urls_show', templateVars);
+  }
+  else {
+    res.send("You do not have access to the page");
+  }
 })
 
 // POST - uses a generated String as shortURL and stores the shortURL to a URL
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body.longURL;
+  // console.log('this is my short URL', shortURL);
+  urlDatabase[shortURL] = {
+    longURL : req.body.longURL,
+    userID : req.cookies['user_id']
+  }
+  console.log('this db should be updated', urlDatabase);
   res.redirect(`/urls/${shortURL}`);
 });
 
 // POST - deletes a url from the browse page
 app.post("/urls/:id/delete", (req,res) => {
+  // console.log('this is the db', urlDatabase);
+  // console.log('this is the cookie', req.cookies['user_id']);
+  // console.log('this is the paremeters', req.params);
+  // console.log('this is the shortURL', urlDatabase[req.params.id]);
+  if(urlDatabase[req.params.id].userID === req.cookies['user_id']){
   delete urlDatabase[req.params.id];
   res.redirect("/urls/");
+  } else {
+    res.send('you do not have premission to delete this');
+  }
+
 })
 
 //POST - updates the longURL to be diffrent URL
 app.post("/urls/:id/update", (req, res) => {
-  let shortURL = req.params.id;
-  urlDatabase[shortURL] = req.body.longURL;
-  res.redirect(`/urls/${shortURL}`);
+  if(urlDatabase[req.params.id].userID === req.cookies['user_id']){
+    let shortURL = req.params.id;
+    urlDatabase[shortURL].longURL = req.body.longURL;
+    res.redirect(`/urls/${shortURL}`);
+  }
 });
 
 //POST - logs in the user_id name
@@ -166,7 +228,7 @@ app.post("/register",(req,res) => {
 //Helper function which checks that the email and password are not empty
 // sends back a status
 const checkEmpties = (email, password) => {
-  console.log(password);
+  //console.log(password);
   let error = [false];
   if(email === '') {
     error = [true,'please put in a username'];
