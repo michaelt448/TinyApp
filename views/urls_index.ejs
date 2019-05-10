@@ -22,12 +22,13 @@
 <body style="font-size:20px; padding:50px;">
   <% include ./partials/_header %>
   <p></p>
-  <h2> MyURLs </h2>
     <!-- Add EJS code here -->
-    <p></p>
     <head>
     <table class = "table">
       <thread>
+        <%if(user_id !== undefined) {%>
+  <h2> MyURLs </h2>
+    <p></p>
     <% Object.keys(urls).forEach(function(key) { %>
       <tr>
       <th> <%= key %> </th>
@@ -40,6 +41,7 @@
   </th>
     </tr>
   <% }) %>
+  <%}%>
 </thread>
 </table>
 </body>
