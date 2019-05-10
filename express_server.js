@@ -5,7 +5,7 @@ const cookieSession = require('cookie-session');
 
 const PORT = 8080; // default port 8080
 
-//SET UP
+// SET UP
 const app = express();
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieSession({
@@ -14,19 +14,19 @@ app.use(cookieSession({
   maxAge : 1000*60*60
 }));
 app.set('view engine', 'ejs');
-//SET UP ENDS
+// SET UP ENDS
 
-//The database for all users, key corresponds to short URL with object value containing email, encrypted pass, and full URL
+// The database for all users, key corresponds to short URL with object value containing email, encrypted pass, and full URL
 const urlDatabase = {
 };
 
-//local users data base, key for user is cookie, value is object with cookie, email, and password
+// local users data base, key for user is cookie, value is object with cookie, email, and password
 const users = {
 };
 
 
 
-//GET - ROOTPAGE - redirects person to login if not logged in, otherwise redirect person to the index page.
+// GET - ROOTPAGE - redirects person to login if not logged in, otherwise redirect person to the index page.
 app.get('/', (req, res) => {
   if(req.session.user_id === undefined) {
     res.redirect('/login');
@@ -35,12 +35,12 @@ app.get('/', (req, res) => {
   }
 });
 
-//GET - /hello - hello extension - prints Hello world in browser
+// GET - /hello - hello extension - prints Hello world in browser
 app.get('/hello', (req,res)=> {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
-//GET - /urls - RENDERS urls_index onto /urls, passing in individual userDB and user_id from cookie
+// GET - /urls - RENDERS urls_index onto /urls, passing in individual userDB and user_id from cookie
 app.get('/urls', (req,res) => {
   const userDB = urlsForUser(req.session.user_id);
   let templateVars = {
@@ -64,7 +64,7 @@ app.get('/urls/new', (req, res) => {
   }
 });
 
-//GET - /login - if logged in than redirects to index, otherwise will render a login page
+// GET - /login - if logged in than redirects to index, otherwise will render a login page
 app.get('/login', (req,res) => {
   if(req.session.user_id === undefined){
     let templateVars = {
@@ -94,9 +94,7 @@ app.get('/register', (req,res) => {
 // GET - /u/: - sends user to longURL using the current shortURL, gives error back if there is no such URL
 // @parm - shortURL, the URL which should redirect to the long URL
 app.get('/u/:shortURL', (req, res) => {
-  //const userDB = urlsForUser(req.session.user_id);
   const longURL = urlDatabase[req.params.shortURL].longURL;
-  console.log(longURL)
   if(longURL === undefined) {
     res.status(404).send('no such shortURL was found');
   }
@@ -149,22 +147,25 @@ app.post('/urls/:id/delete', (req,res) => {
       res.status(403).send('you do not have premission to delete this');
     }
   }
-
-})
+});
 
 // POST - /urls/:/update - updates the value the longURL stored under specific key shortURL to
 // diffrent longURL returns error if it does not have premission
 app.post('/urls/:id/update', (req, res) => {
-  if(urlDatabase[req.params.id].userID === req.session.user_id){
-    let shortURL = req.params.id;
-    urlDatabase[shortURL].longURL = req.body.longURL;
-    res.redirect(`/urls/`);
+  if(urlDatabase[req.params.id].longURL === undefined) {
+    res.status(404).send('the url you are looking for does not exist');
   }else {
-    res.status(403).send('you do not have premission to update this');
+    if(urlDatabase[req.params.id].userID === req.session.user_id){
+      let shortURL = req.params.id;
+      urlDatabase[shortURL].longURL = req.body.longURL;
+      res.redirect(`/urls/`);
+    }else {
+      res.status(403).send('you do not have premission to update this');
+      }
   }
 });
 
-//POST - /login - if email and password are valid redirects to /urls otherwise passes back an error
+// POST - /login - if email and password are valid redirects to /urls otherwise passes back an error
 app.post("/login", (req, res) => {
   let [user_id,error] = checkEmail(req.body.email,req.body.password);
   let templateVars = {
@@ -175,15 +176,15 @@ app.post("/login", (req, res) => {
   }else {
     req.session.user_id = user_id;
     res.redirect('/urls/');
-  }
+    }
 });
-//POST - /logout - deletes user_id from cookie, logs out
+// POST - /logout - deletes user_id from cookie, logs out
 app.post("/logout", (req, res) => {
   req.session = null;
   res.redirect('/urls/')
 });
 
-//POST - adds a new user to the global user object and adds a cookie
+// POST - adds a new user to the global user object and adds a cookie
 app.post("/register",(req,res) => {
   let error = checkRegistrationErrors(req.body.email,req.body.password);
   let templateVars = {error : error};
@@ -209,7 +210,7 @@ app.listen(PORT, () => {
 
 
 //                           HELPER FUNCTIONS BEGIN HERE
-//Helper function Generates Random string from of length 6 from combination of 6 lower case letters
+// Helper function Generates Random string from of length 6 from combination of 6 lower case letters
 // @ret a randomly generated string
 const generateRandomString = function() {
   let length = 6;
@@ -220,18 +221,17 @@ const generateRandomString = function() {
     length--;
   }
   return word;
-}
+};
 
 
 
-//Helper function which checks that the email and password are not empty
+// Helper function which checks that the email and password are not empty
 // @param email : 'string' which is email of person
 // @param password : 'string' which is the password inputed by user
 // @retr error: array of size 2, first entry containing boolean, true if there is error, false else,
-//second entry containing error message
+// second entry containing error message
 
 const checkEmpties = (email, password) => {
-  //console.log(password);
   let error = [false];
   if(email === '') {
     error = [true,'please put in a username'];
@@ -245,7 +245,7 @@ const checkEmpties = (email, password) => {
 // @param email : 'string' which is email of person
 // @param password : 'string' which is the password inputed by user
 // @retr error: array of size 2, first entry containing boolean, true if there is error, false else,
-//second entry containing error message
+// second entry containing error message
 
 const checkRegistrationErrors = (email,password) => {
   let error = checkEmpties(email,password);
@@ -261,18 +261,18 @@ const checkRegistrationErrors = (email,password) => {
   return error;
 };
 
-//Helper function which checks whether email and password is in the database and match for LOGIN
+// Helper function which checks whether email and password is in the database and match for LOGIN
 // If there are errors, the username sent back is empty string
 // @param email : 'string' which is email of person
 // @param password : 'string' which is the password inputed by user
 // @retr error: array of size 2, first entry containing boolean, true if there is error, false else,
-//second entry containing error message
+// second entry containing error message
 const checkEmail = (email,password) => {
   let error = checkEmpties(email,password);
   if(error[0]) {
     return ['', error];
   }
-  for(user in users) {
+  for(let user in users) {
     if(users[user].email === email) {
       if(bcrypt.compareSync(password, users[user].password)){
         return [users[user].id,error];
@@ -285,12 +285,12 @@ const checkEmail = (email,password) => {
   return ['',[true,'The username was not found']];
 };
 
-//Helper function which bring back individual database for the user from userID
+// Helper function which bring back individual database for the user from userID
 // @ param userID: 'string' cookie which is used to compare to general database
 // @ retr userDB: object with key value where key is smallURL and value is longURL
 const urlsForUser = (userID) => {
   const userDB = {};
-  for(smallURL in urlDatabase) {
+  for(let smallURL in urlDatabase) {
     if(urlDatabase[smallURL].userID === userID) {
       userDB[smallURL] = urlDatabase[smallURL].longURL;
     }
