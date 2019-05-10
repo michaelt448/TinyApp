@@ -5,6 +5,7 @@ const cookieSession = require('cookie-session');
 
 const PORT = 8080; // default port 8080
 
+//SET UP
 const app = express();
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieSession({
@@ -13,32 +14,19 @@ app.use(cookieSession({
   maxAge : 1000*60*60
 }));
 app.set('view engine', 'ejs');
-
+//SET UP ENDS
 
 //The database for all users, key corresponds to short URL with object value containing email, encrypted pass, and full URL
 const urlDatabase = {
 };
 
-//local users data base, contains key for user is cookie, value is object with cookie, email, and password
+//local users data base, key for user is cookie, value is object with cookie, email, and password
 const users = {
-  "A": {
-    id: "A",
-    email: "user@example.com",
-    password: "purple-monkey-dinosaur"
-  },
- "B": {
-    id: "B",
-    email: "user2@example.com",
-    password: "dishwasher-funk"
-  }
-}
+};
 
 
-//setUp
-//End setUp
 
-
-//Rootpage - redirects person to login if not in, otherwise redirect person to the index page.
+//Rootpage - redirects person to login if not logged in, otherwise redirect person to the index page.
 app.get("/", (req, res) => {
   if(req.session.user_id === undefined) {
     res.redirect('/login');
@@ -53,9 +41,8 @@ app.get('/hello', (req,res)=> {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
-//GET - urls extension - brings to a table of urls with tinyURL on left and Full URL to right
+//GET - RENDERS /urls, passing in individual userDB and user_id from cookie
 app.get('/urls', (req,res) => {
-  //console.log(req.session.user_id);
   const userDB = urlsForUser(req.session.user_id);
   // console.log('this is my data base', userDB)
   // console.log('this is the general db', urlDatabase );
@@ -67,21 +54,7 @@ app.get('/urls', (req,res) => {
     res.render('urls_index', templateVars);
 });
 
-//Helper function which checks through the dataBase of the logged in user and brings back their URLs
-const urlsForUser = (userID) => {
-  //console.log('I am here', userID);
-  const userDB = {};
-  for(smallURL in urlDatabase) {
-    // console.log('current small URL', smallURL);
-    // console.log('this is the the id which should be matched', userID);
-    // console.log('this is the db', urlDatabase);
-    if(urlDatabase[smallURL].userID === userID) {
-      userDB[smallURL] = urlDatabase[smallURL].longURL;
-    }
-  }
-  //console.log(userDB);
-  return userDB;
-}
+
 
 // GET - page to make a new tinyURL for any URL
 app.get('/urls/new', (req, res) => {
@@ -116,7 +89,7 @@ app.get('/register', (req,res) => {
   res.render('urls_registration',templateVars);
   }
 });
-
+//                                 GET MESSAGE TAKE A PAREMETER, ANY GET MESSAGE PUT BEFORE
 // GET - sends user to URL using the current shortURL
 app.get("/u/:shortURL", (req, res) => {
   const userDB = urlsForUser(req.session.user_id);
@@ -145,6 +118,7 @@ app.get('/urls/:shortURL', (req,res) => {
     res.send("You do not have access to the page");
   }
 })
+//                            POST BEGINS HERE
 
 // POST - uses a generated String as shortURL and stores the shortURL to a URL
 app.post("/urls", (req, res) => {
@@ -214,8 +188,6 @@ app.post("/register",(req,res) => {
   }
   else {
     const hashedPassword = bcrypt.hashSync(req.body.password, 10);
-    // console.log('this is the regular password', req.body.password);
-    // console.log('this is the hashed password', hashedPassword);
     const id = generateRandomString();
     users[id] = {
       id : id,
@@ -225,6 +197,11 @@ app.post("/register",(req,res) => {
     req.session.user_id = id;
     res.redirect('/urls/');
   }
+});
+
+// Runs servers on PORT
+app.listen(PORT, () => {
+  console.log(`Example app listening on port ${PORT}!`);
 });
 
 
@@ -305,7 +282,16 @@ const checkEmail = (email,password) => {
   return ['',[true,'The username was not found']];
 };
 
-// Runs servers on PORT
-app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
-});
+//Helper function which bring back individual database for the user from userID
+// @ param userID: 'string' cookie which is used to compare to general database
+// @ retr userDB: object with key value where key is smallURL and value is longURL
+const urlsForUser = (userID) => {
+  const userDB = {};
+  for(smallURL in urlDatabase) {
+    if(urlDatabase[smallURL].userID === userID) {
+      userDB[smallURL] = urlDatabase[smallURL].longURL;
+    }
+  }
+  return userDB;
+}
+
