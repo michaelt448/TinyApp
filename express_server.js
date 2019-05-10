@@ -96,6 +96,7 @@ app.get('/register', (req,res) => {
 app.get('/u/:shortURL', (req, res) => {
   //const userDB = urlsForUser(req.session.user_id);
   const longURL = urlDatabase[req.params.shortURL].longURL;
+  console.log(longURL)
   if(longURL === undefined) {
     res.status(404).send('no such shortURL was found');
   }
@@ -105,6 +106,9 @@ app.get('/u/:shortURL', (req, res) => {
 // GET - /urls/: - bring to a page which short the shortURL for the longURL
 // @param shortURL : the shortURL matching to the longURL
 app.get('/urls/:shortURL', (req,res) => {
+  if(urlDatabase[req.params.shortURL] === undefined){
+    res.status(404).send('the URL you are trying to access does not exist');
+  } else {
   if(urlDatabase[req.params.shortURL].userID === req.session.user_id) {
     const userDB = urlsForUser(req.session.user_id);
     let templateVars = {
@@ -116,6 +120,7 @@ app.get('/urls/:shortURL', (req,res) => {
   }else {
     res.status(402).send('You do not have access to the page');
   }
+}
 });
 
 
@@ -134,11 +139,15 @@ app.post('/urls', (req, res) => {
 // POST - /urls/:/delete - deletes a url from the data base and from the browser page if has access
 // otherwise sends error
 app.post('/urls/:id/delete', (req,res) => {
-  if(urlDatabase[req.params.id].userID === req.session.user_id){
-  delete urlDatabase[req.params.id];
-  res.redirect("/urls/");
+  if(urlDatabase[req.params.id].longURL === undefined){
+    res.statues(404).send('the URL you are trying to acces does not exist');
   }else {
-    res.status(403).send('you do not have premission to delete this');
+    if(urlDatabase[req.params.id].userID === req.session.user_id){
+    delete urlDatabase[req.params.id];
+    res.redirect("/urls/");
+    }else {
+      res.status(403).send('you do not have premission to delete this');
+    }
   }
 
 })
