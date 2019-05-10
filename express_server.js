@@ -1,14 +1,19 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const cookieParser = require('cookie-parser')
 const bcrypt = require('bcrypt');
+const cookieSession = require('cookie-session');
 
 const PORT = 8080; // default port 8080
 
 const app = express();
 app.use(bodyParser.urlencoded({extended: true}));
-app.use(cookieParser());
+app.use(cookieSession({
+  name : 'session',
+  keys : ['key1'],
+  maxAge : 1000*60*60
+}));
 app.set('view engine', 'ejs');
+
 
 //local dataBase
 const urlDatabase = {
@@ -66,16 +71,16 @@ app.get('/hello', (req,res)=> {
 
 //GET - urls extension - brings to a table of urls with tinyURL on left and Full URL to right
 app.get('/urls', (req,res) => {
-  if(req.cookies !== undefined){
-    const userDB = urlsForUser(req.cookies['user_id']);
+  //console.log(req.session.user_id);
+    const userDB = urlsForUser(req.session.user_id);
     // console.log('this is my data base', userDB)
     // console.log('this is the general db', urlDatabase );
+    console.log('HELELLOWJIOJDF');
     let templateVars = {
       urls: userDB,
-      user_id : users[req.cookies['user_id']]
+      user_id : users[req.session.user_id]
       };
     res.render('urls_index', templateVars);
-  }
 });
 
 //Helper function which checks through the dataBase of the logged in user and brings back their URLs
@@ -96,11 +101,11 @@ const urlsForUser = (userID) => {
 
 // GET - page to make a new tinyURL for any URL
 app.get('/urls/new', (req, res) => {
-  if(req.cookies['user_id'] === undefined) {
+  if(req.session.user_id === undefined) {
     res.redirect('/login');
   }
   else {
-    let templateVars = {user_id : req.cookies['user_id']}
+    let templateVars = {user_id : req.session.user_id}
     res.render('urls_new', templateVars);
   }
 });
@@ -123,7 +128,7 @@ app.get('/register', (req,res) => {
 
 // GET - sends user to URL using the current shortURL
 app.get("/u/:shortURL", (req, res) => {
-  const userDB = urlsForUser(req.cookies['user_id']);
+  const userDB = urlsForUser(req.session.user_id);
   const longURL = userDB[req.params.shortURL];
   if(longURL === undefined) {
     res.send("no such shortURL was found");
@@ -135,14 +140,14 @@ app.get("/u/:shortURL", (req, res) => {
 app.get('/urls/:shortURL', (req,res) => {
     // console.log('this is the paremeters', urlDatabase[req.params.shortURL].userID);
     // console.log('this is my my cookie', req.cookies['user_id']);
-    if(urlDatabase[req.params.shortURL].userID === req.cookies['user_id']) {
-    const userDB = urlsForUser(req.cookies['user_id']);
+    if(urlDatabase[req.params.shortURL].userID === req.session.user_id) {
+    const userDB = urlsForUser(req.session.user_id);
     // console.log('this is an updated db', urlDatabase);
     // console.log('this is an updated userDB', userDB);
     // console.log('this is suppose to be long url',userDB[req.params.shortURL]);
     let templateVars = { shortURL: req.params.shortURL,
                        longURL : userDB[req.params.shortURL],
-                        user_id : req.cookies['user_id']};
+                        user_id : req.session.user_id};
     res.render('urls_show', templateVars);
   }
   else {
@@ -156,7 +161,7 @@ app.post("/urls", (req, res) => {
   // console.log('this is my short URL', shortURL);
   urlDatabase[shortURL] = {
     longURL : req.body.longURL,
-    userID : req.cookies['user_id']
+    userID : req.session.user_id
   }
   console.log('this db should be updated', urlDatabase);
   res.redirect(`/urls/${shortURL}`);
@@ -168,7 +173,7 @@ app.post("/urls/:id/delete", (req,res) => {
   // console.log('this is the cookie', req.cookies['user_id']);
   // console.log('this is the paremeters', req.params);
   // console.log('this is the shortURL', urlDatabase[req.params.id]);
-  if(urlDatabase[req.params.id].userID === req.cookies['user_id']){
+  if(urlDatabase[req.params.id].userID === req.session.user_id){
   delete urlDatabase[req.params.id];
   res.redirect("/urls/");
   } else {
@@ -179,7 +184,7 @@ app.post("/urls/:id/delete", (req,res) => {
 
 //POST - updates the longURL to be diffrent URL
 app.post("/urls/:id/update", (req, res) => {
-  if(urlDatabase[req.params.id].userID === req.cookies['user_id']){
+  if(urlDatabase[req.params.id].userID === req.session.user_id){
     let shortURL = req.params.id;
     urlDatabase[shortURL].longURL = req.body.longURL;
     res.redirect(`/urls/${shortURL}`);
@@ -196,13 +201,13 @@ app.post("/login", (req, res) => {
     res.render('urls_login',templateVars);
   }
   else {
-    res.cookie('user_id', user_id);
+    req.session.user_id = user_id;
     res.redirect('/urls/');
   }
 });
 //POST - deletes user_id from cookie, logs out
 app.post("/logout", (req, res) => {
-  res.clearCookie('user_id');
+  req.session = null;
   res.redirect('/urls/')
 });
 
@@ -224,7 +229,7 @@ app.post("/register",(req,res) => {
       email : req.body.email,
       password : hashedPassword
     };
-    res.cookie('user_id', id);
+    req.session.user_id = id;
     res.redirect('/urls/');
   }
 })
