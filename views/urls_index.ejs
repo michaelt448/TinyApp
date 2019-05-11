@@ -39,7 +39,7 @@
         <th scope="col"><%= urls[key] %></th>
         <th scope="col"> <a href = "/urls/<%= key %>"> edit </a> </th>
         <th scope="col>">
-        <form method="POST" action="/urls/<%= key %>/delete">
+        <form method="POST" action="/urls/<%= key %>?_method=DELETE">
           <button type="submit" value = 'delete'>delete</button>
       </form>
         </th>

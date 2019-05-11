@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
 const cookieSession = require('cookie-session');
+const methodOverride = require('method-override');
 
 const PORT = 8080; // default port 8080
 
@@ -14,6 +15,7 @@ app.use(cookieSession({
   maxAge : 1000*60*60
 }));
 app.set('view engine', 'ejs');
+app.use(methodOverride('_method'));
 // SET UP ENDS
 
 // The database for all users, key corresponds to short URL with object value containing email, encrypted pass, and full URL
@@ -136,7 +138,7 @@ app.post('/urls', (req, res) => {
 
 // POST - /urls/:/delete - deletes a url from the data base and from the browser page if has access
 // otherwise sends error
-app.post('/urls/:id/delete', (req,res) => {
+app.delete('/urls/:id/', (req,res) => {
   if(urlDatabase[req.params.id].longURL === undefined){
     res.statues(404).send('the URL you are trying to acces does not exist');
   }else {
@@ -151,7 +153,7 @@ app.post('/urls/:id/delete', (req,res) => {
 
 // POST - /urls/:/update - updates the value the longURL stored under specific key shortURL to
 // diffrent longURL returns error if it does not have premission
-app.post('/urls/:id/update', (req, res) => {
+app.put('/urls/:id/', (req, res) => {
   if(urlDatabase[req.params.id].longURL === undefined) {
     res.status(404).send('the url you are looking for does not exist');
   }else {
